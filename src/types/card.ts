@@ -31,6 +31,7 @@ export interface CardData {
   color: string;
   colors?: string[];
   sizes: string[];
+  sizeNotes?: { [size: string]: string };
 }
 
 export interface MaterialItem {

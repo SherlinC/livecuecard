@@ -188,13 +188,15 @@ export function BenefitsForm() {
         />
 
         {/* 退换货政策 */}
-        <input
-          type="text"
-          value={cardData.shippingInfo.returnPolicy}
-          onChange={(e) => handleReturnPolicyChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent mb-3"
-          placeholder="如：7天无理由退换货，有运费险"
-        />
+        <label className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={!!cardData.shippingInfo.returnPolicy}
+            onChange={(e) => handleReturnPolicyChange(e.target.checked ? '7天无理由' : '')}
+            className="mr-2 text-pink-600 focus:ring-pink-500 rounded"
+          />
+          <span className="text-sm text-gray-700">7天无理由</span>
+        </label>
 
         {/* 运费险 */}
         <label className="flex items-center">
@@ -223,52 +225,6 @@ export function BenefitsForm() {
         </p>
       </div>
 
-      {/* 预览 */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">信息预览</h3>
-        
-        {cardData.benefits.length > 0 && (
-          <div className="mb-3">
-            <div className="text-xs text-gray-500 mb-1">直播间福利</div>
-            <div className="text-sm text-gray-700">
-              {cardData.benefits.join('；')}
-            </div>
-          </div>
-        )}
-
-        {cardData.activityTime && (
-          <div className="mb-3">
-            <div className="text-xs text-gray-500 mb-1">活动时间</div>
-            <div className="text-sm text-gray-700">{cardData.activityTime}</div>
-          </div>
-        )}
-
-        {cardData.shippingInfo.shippingTime && (
-          <div className="mb-3">
-            <div className="text-xs text-gray-500 mb-1">发货信息</div>
-            <div className="text-sm text-gray-700">
-              {cardData.shippingInfo.type === 'presale' ? '预售' : '现货'} · {cardData.shippingInfo.shippingTime}
-              {cardData.shippingInfo.insurance && ' · 含运费险'}
-            </div>
-          </div>
-        )}
-
-        {cardData.shippingInfo.returnPolicy && (
-          <div className="mb-3">
-            <div className="text-xs text-gray-500 mb-1">退换政策</div>
-            <div className="text-sm text-gray-700">{cardData.shippingInfo.returnPolicy}</div>
-          </div>
-        )}
-
-        {cardData.command && (
-          <div>
-            <div className="text-xs text-gray-500 mb-1">直播口令</div>
-            <div className="text-sm text-gray-700 font-mono bg-white px-2 py-1 rounded border">
-              {cardData.command}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

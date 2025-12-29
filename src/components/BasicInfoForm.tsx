@@ -10,7 +10,7 @@ export function BasicInfoForm() {
   const [newSize, setNewSize] = useState('');
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const platforms = ['小红书', '淘宝', '抖音', '快手', '微博'];
+  const platforms = ['小红书', '淘宝', '抖音'];
 
   const handlePlatformChange = (platform: string) => {
     const newPlatforms = cardData.platforms.includes(platform)
@@ -321,76 +321,6 @@ export function BasicInfoForm() {
         </div>
       </div>
 
-      {/* 尺码选择 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">可选尺码</label>
-        <div className="space-y-2">
-          {cardData.sizes.map((s, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
-              <input
-                type="text"
-                value={s}
-                onChange={(e) => {
-                  const arr = [...cardData.sizes];
-                  arr[index] = e.target.value;
-                  useCardStore.getState().updateCardData({ sizes: arr });
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const arr = [...cardData.sizes];
-                    arr.splice(index + 1, 0, '');
-                    useCardStore.getState().updateCardData({ sizes: arr });
-                  }
-                }}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
-                placeholder="尺码，如：S、M、L、XL"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const arr = cardData.sizes.filter((_, i) => i !== index);
-                  useCardStore.getState().updateCardData({ sizes: arr });
-                }}
-                className="text-red-500 hover:text-red-700 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500 w-6">{cardData.sizes.length + 1}.</span>
-            <input
-              type="text"
-              value={newSize}
-              onChange={(e) => setNewSize(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && newSize.trim()) {
-                  const arr = [...cardData.sizes, newSize.trim()];
-                  useCardStore.getState().updateCardData({ sizes: arr });
-                  setNewSize('');
-                }
-              }}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
-              placeholder="添加尺码，如：S、M、L、XL"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (newSize.trim()) {
-                  const arr = [...cardData.sizes, newSize.trim()];
-                  useCardStore.getState().updateCardData({ sizes: arr });
-                  setNewSize('');
-                }
-              }}
-              className="text-pink-600 hover:text-pink-700 p-1"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

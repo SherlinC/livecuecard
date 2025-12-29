@@ -68,13 +68,15 @@ const defaultCardData: CardData = {
   shippingInfo: {
     type: 'presale',
     shippingTime: '',
-    returnPolicy: '',
-    insurance: false
+    returnPolicy: '7天无理由',
+    insurance: true
   },
   command: '',
   color: '',
   colors: [],
   sizes: []
+  ,
+  sizeNotes: {}
 };
 
 function readHistory(): CardHistoryEntry[] {

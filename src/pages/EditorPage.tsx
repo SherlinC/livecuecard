@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { CardPreview } from '../components/CardPreview';
 import { BasicInfoForm } from '../components/BasicInfoForm';
 import { PriceForm } from '../components/PriceForm';
@@ -18,13 +18,14 @@ export function EditorPage() {
   const [templateType, setTemplateType] = useState<'portrait' | 'landscape'>('portrait');
   const { cardData, isGenerating, setGenerating, setPreviewUrl, previewUrl, upsertHistoryByName, resetCardData } = useCardStore() as any;
   const previewRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const tabs = [
     { id: 'basic', name: '基础信息', component: BasicInfoForm },
     { id: 'price', name: '价格设置', component: PriceForm },
     { id: 'images', name: '图片上传', component: ImageUpload },
     { id: 'size', name: '尺寸信息', component: SizeChartForm },
-    { id: 'benefits', name: '福利活动', component: BenefitsForm },
+    { id: 'benefits', name: '发货信息', component: BenefitsForm },
   ];
 
   const performGenerate = async (fmt: 'png' | 'pdf') => {
@@ -61,6 +62,18 @@ export function EditorPage() {
     setExportMenuOpen((v) => !v);
   };
 
+  useEffect(() => {
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (!exportMenuOpen) return;
+      const el = exportMenuRef.current;
+      if (el && !el.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [exportMenuOpen]);
+
   const handleSave = async () => {
     const name = (cardData.productTitle || '').trim() || '未命名手卡';
     let preview: string | null = null;
@@ -89,16 +102,26 @@ export function EditorPage() {
 
   const LandscapeTemplatePreview = () => (
     <div className="group cursor-pointer">
-      <div className="card-font bg-white rounded-2xl shadow-lg p-6 border border-gray-200 h-[420px] flex flex-col">
-        <div className="flex items-center gap-3 text-gray-900">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
-            {cardData.brandLogo && (
-              <img src={cardData.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
-            )}
+      <div className="card-font bg-white rounded-2xl shadow-lg p-6 border border-gray-200 inline-block flex flex-col">
+        <div className="flex items-center justify-between text-gray-900">
+          <div className="flex items-center gap-[6px]">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+              {cardData.brandLogo && (
+                <img src={cardData.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+              )}
+            </div>
+            <div className="text-sm font-medium text-gray-900 uppercase">{cardData.brandName || '品牌'}</div>
           </div>
-          <div className="text-sm">{cardData.brandName || '品牌'}</div>
+          <div className="flex items-center space-x-2">
+            {cardData.platforms.map((p: string, i: number) => (
+              <div key={i} className="platform-badge">{p}</div>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-4 h-64 items-stretch flex-none">
+        <div className="text-center mt-2">
+          <h3 className="text-lg font-bold text-gray-900 py-3">{cardData.productTitle || '产品标题'}</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-2 items-stretch">
           <div className="flex flex-col h-full gap-4">
             <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm">
               {cardData.mainImage ? (
@@ -107,12 +130,10 @@ export function EditorPage() {
                 <>商品图</>
               )}
             </div>
-            <div className="bg-gray-100 rounded-lg h-16 flex items-center px-4 text-gray-900 text-lg font-bold">
-              {cardData.productTitle ? cardData.productTitle : '产品标题'}
-            </div>
+            
           </div>
           <div className="flex flex-col h-full space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <div className="rounded-lg bg-black text-white h-16 flex items-center justify-center text-sm">
                 <div>
                   <div className="text-xs text-gray-300">市场价</div>
@@ -135,8 +156,8 @@ export function EditorPage() {
                 </div>
               </div>
             </div>
-            <div className="space-y-2 bg-gray-50 rounded-lg p-3 flex-1">
-              <div>
+            <div className="space-y-2">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <div className="text-sm font-medium text-gray-700 mb-1">材料</div>
                 {cardData.materials && cardData.materials.length > 0 ? (
                   cardData.materials.map((m: any, index: number) => (
@@ -146,7 +167,7 @@ export function EditorPage() {
                   <div className="text-sm text-gray-400">暂无材料</div>
                 )}
               </div>
-              <div>
+              <div className="bg-gray-50 rounded-lg p-3">
                 <div className="text-sm font-medium text-gray-700 mb-1">设计</div>
                 {cardData.designs && cardData.designs.length > 0 ? (
                   cardData.designs.map((d: any, index: number) => (
@@ -170,38 +191,36 @@ export function EditorPage() {
             {cardData.sizes && cardData.sizes.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">尺码</h4>
-                <div className="text-sm text-gray-600">{cardData.sizes.join('、')}</div>
+                <div className="text-sm text-gray-600">{(cardData.sizes as string[]).map((s: string) => s + (cardData.sizeNotes && cardData.sizeNotes[s] ? `（${cardData.sizeNotes[s]}）` : '')).join('、')}</div>
               </div>
             )}
           </div>
         )}
-        <div className="bg-gray-50 rounded-xl mt-4 text-gray-700 text-sm flex-1 p-4">
-          {Object.keys(cardData.sizeChart?.sizes || {}).length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="text-xs w-full">
-                <thead>
-                  <tr>
-                    {cardData.sizeChart.headers.map((h: string, i: number) => (
-                      <th key={i} className="text-left py-1 px-2 text-gray-600">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(cardData.sizeChart.sizes).map(([size, data]: any, idx: number) => (
-                    <tr key={idx} className="border-t">
-                      <td className="py-1 px-2 font-medium">{size}</td>
-                      {cardData.sizeChart.headers.slice(1).map((header: string, headerIndex: number) => (
-                        <td key={headerIndex} className="py-1 px-2 text-gray-600">{data[header] || '-'}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500">尺码表</div>
-          )}
-        </div>
+        
+        {(cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.command) && (
+          <div className="space-y-3 mt-2">
+            {cardData.activityTime && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                <div className="text-sm text-gray-600">{cardData.activityTime}</div>
+              </div>
+            )}
+            {cardData.shippingInfo.shippingTime && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
+                <div className="text-sm text-gray-600">
+                  {(cardData.shippingInfo.type === 'presale' ? '预售' : '现货')} · {cardData.shippingInfo.shippingTime}{cardData.shippingInfo.insurance ? ' · 含运费险' : ''}{cardData.shippingInfo.returnPolicy ? ` · ${cardData.shippingInfo.returnPolicy}` : ''}
+                </div>
+              </div>
+            )}
+            {cardData.command && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                <div className="text-sm text-gray-600 font-mono">{cardData.command}</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -250,7 +269,7 @@ export function EditorPage() {
                 <Save className="w-4 h-4 mr-2" />
                 保存
               </button>
-              <div className="relative" onMouseLeave={() => setExportMenuOpen(false)}>
+              <div className="relative" ref={exportMenuRef}>
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}

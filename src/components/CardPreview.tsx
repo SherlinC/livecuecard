@@ -6,25 +6,24 @@ export function CardPreview({ data }: { data?: CardData }) {
   const d = data ?? cardData;
   return (
     <div className="card-font bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto border border-gray-200">
-      {/* 平台标签 */}
-      <div className="flex justify-center space-x-2 mb-2">
-        {d.platforms.map((platform, index) => (
-          <div key={index} className="platform-badge">
-            {platform}
-          </div>
-        ))}
-      </div>
-
-      {(d.brandName || d.brandLogo) && (
-        <div className="flex justify-center items-center gap-2 mb-4">
+      {/* 品牌与平台同一行：左品牌，右平台 */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-[6px]">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
             {d.brandLogo && (
               <img src={d.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
             )}
           </div>
-          <div className="text-sm text-gray-900">{d.brandName || '品牌'}</div>
+          <div className="text-sm font-medium text-gray-900 uppercase">{(d.brandName || '品牌')}</div>
         </div>
-      )}
+        <div className="flex items-center space-x-2">
+          {d.platforms.map((platform, index) => (
+            <div key={index} className="platform-badge">
+              {platform}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* 主要内容区域 */}
       <div className="space-y-4">
@@ -39,7 +38,7 @@ export function CardPreview({ data }: { data?: CardData }) {
         {(d.mainImage || d.backImage) && (
           <div className={`${cardData.mainImage && cardData.backImage ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
             {d.mainImage && (
-              <div className="bg-gray-200 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <div className="aspect-square">
                   <img
                     src={d.mainImage}
@@ -47,7 +46,6 @@ export function CardPreview({ data }: { data?: CardData }) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="text-center text-xs text-gray-600 mt-1">正面</div>
               </div>
             )}
             {d.backImage && (
@@ -123,12 +121,25 @@ export function CardPreview({ data }: { data?: CardData }) {
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">尺码</h4>
                 <div className="text-sm text-gray-600">
-                  {d.sizes.join('、')}
+                  {d.sizes.map(s => s + (d.sizeNotes && d.sizeNotes[s] ? `（${d.sizeNotes[s]}）` : '')).join('、')}
                 </div>
               </div>
             )}
           </div>
         ) : null}
+
+        {(d.sizeRecommendations && d.sizeRecommendations.length > 0) && (
+          <div className="bg-gray-50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">身高体重推荐</h4>
+            <div className="space-y-1 text-sm text-gray-600">
+              {d.sizeRecommendations.map((rec, idx) => (
+                <div key={idx}>
+                  {rec.height}cm · {rec.weight}kg · 推荐 {rec.recommendedSize}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 尺寸表 */}
         {Object.keys(d.sizeChart.sizes).length > 0 && (
@@ -187,7 +198,7 @@ export function CardPreview({ data }: { data?: CardData }) {
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
                 <div className="text-sm text-gray-600">
-                  {d.shippingInfo.type === 'presale' ? '预售' : '现货'} · {d.shippingInfo.shippingTime}
+                  {d.shippingInfo.type === 'presale' ? '预售' : '现货'} · {d.shippingInfo.shippingTime}{d.shippingInfo.insurance ? ' · 含运费险' : ''}{d.shippingInfo.returnPolicy ? ` · ${d.shippingInfo.returnPolicy}` : ''}
                 </div>
               </div>
             )}

@@ -155,34 +155,7 @@ export function ImageUpload() {
         )}
       </div>
 
-      {/* 图片预览 */}
-      {(cardData.mainImage || cardData.backImage) && (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">图片预览</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {cardData.mainImage && (
-              <div className="text-center">
-                <img
-                  src={cardData.mainImage}
-                  alt="主图预览"
-                  className="w-full h-32 object-cover rounded-lg border mb-2"
-                />
-                <p className="text-xs text-gray-600">主图</p>
-              </div>
-            )}
-            {cardData.backImage && (
-              <div className="text-center">
-                <img
-                  src={cardData.backImage}
-                  alt="背面图预览"
-                  className="w-full h-32 object-cover rounded-lg border mb-2"
-                />
-                <p className="text-xs text-gray-600">背面图</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      
 
       {/* 图片要求说明 */}
       <div className="bg-blue-50 rounded-lg p-4">
