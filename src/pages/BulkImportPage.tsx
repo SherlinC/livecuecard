@@ -8,6 +8,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { CardData } from '../types/card';
+import { useNavigate } from 'react-router-dom';
 
 export function BulkImportPage() {
   const [rowsCount, setRowsCount] = useState(0);
@@ -15,11 +16,15 @@ export function BulkImportPage() {
   const [fileName, setFileName] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [templateType, setTemplateType] = useState<'portrait' | 'landscape'>('landscape');
+  const [bulkBrandLogo, setBulkBrandLogo] = useState<string>('');
   const previewRef = useRef<HTMLDivElement>(null);
-  const { updateCardData } = useCardStore();
+  const { updateCardData, resetCardData } = useCardStore();
+  const navigate = useNavigate();
   const [items, setItems] = useState<CardData[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<CardData | null>(null);
+  const bulkLogoInputRef = useRef<HTMLInputElement>(null);
 
   const parsedRowsRef = useRef<any[]>([]);
 
@@ -31,7 +36,8 @@ export function BulkImportPage() {
     parsedRowsRef.current = rows;
     setRowsCount(rows.length);
     setErrors(errors);
-    setItems(rows as CardData[]);
+    const withLogo = bulkBrandLogo ? (rows as CardData[]).map(r => ({ ...r, brandLogo: bulkBrandLogo })) : (rows as CardData[]);
+    setItems(withLogo);
   };
 
   const ensureImageLoaded = (url?: string) => new Promise<void>((resolve) => {
@@ -56,9 +62,13 @@ export function BulkImportPage() {
         ensureImageLoaded(row.mainImage),
         ensureImageLoaded(row.backImage)
       ]);
-      await new Promise(r => setTimeout(r, 50));
+      // 更新隐藏预览的渲染数据以匹配当前行
+      setEditing(row);
+      await new Promise(r => setTimeout(r, 120));
 
-      const target = (previewRef.current.firstElementChild as HTMLElement) || previewRef.current;
+      const target = (previewRef.current.querySelector(`[data-template="${templateType}"]`) as HTMLElement)
+        || (previewRef.current.firstElementChild as HTMLElement)
+        || previewRef.current;
       const result = await generateCardImage(target);
       if (result.success && result.dataURL) {
         const blob = dataURLToBlob(result.dataURL);
@@ -78,8 +88,33 @@ export function BulkImportPage() {
   return (
     <div className="p-6">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">批量导入</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">批量导入</h1>
+          <button
+            onClick={() => {
+              try { localStorage.clear(); } catch {}
+              setItems([]);
+              setRowsCount(0);
+              setErrors([]);
+              setFileName('');
+              try { (useCardStore.getState() as any).resetCardData(); } catch {}
+              window.location.reload();
+            }}
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+          >清缓存</button>
+        </div>
         <p className="text-gray-600 mb-6">上传符合模板的Excel文件，系统将批量生成手卡图片并打包下载。</p>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+          <h2 className="text-lg font-semibold mb-3">下载Excel模板</h2>
+          <button
+            onClick={downloadTemplate}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            下载Excel模板
+          </button>
+        </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <div className="flex items-center gap-4">
@@ -88,13 +123,6 @@ export function BulkImportPage() {
               选择Excel文件
               <input type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
             </label>
-            <button
-              onClick={downloadTemplate}
-              className="flex items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200"
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              下载Excel模板
-            </button>
           </div>
 
           {fileName && (
@@ -107,39 +135,232 @@ export function BulkImportPage() {
               <div className="text-red-600">错误：{errors.slice(0,3).join('；')}{errors.length>3?'…':''}</div>
             )}
           </div>
+
+          <div className="mt-4">
+            <h3 className="text-md font-semibold text-gray-900 mb-2">批量增加品牌Logo</h3>
+            <input
+              ref={bulkLogoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const url = String(reader.result || '');
+                  setBulkBrandLogo(url);
+                  setItems(prev => prev.map(it => ({ ...it, brandLogo: url })));
+                };
+                reader.readAsDataURL(file);
+              }}
+              className="hidden"
+            />
+            <div className="flex items-center gap-3">
+              <div
+                className="group relative w-[36px] h-[36px] rounded-full overflow-hidden bg-gray-200 cursor-pointer"
+                onClick={() => bulkLogoInputRef.current?.click()}
+              >
+                {bulkBrandLogo ? (
+                  <img src={bulkBrandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-gray-700">
+                    <span className="inline group-hover:hidden">Logo</span>
+                    <span className="hidden group-hover:inline">+</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-gray-500">设置后，批量预览与导出中的所有卡片均使用该Logo</div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">批量生成</h2>
-            <button
-              disabled={isGenerating || rowsCount===0}
-              onClick={batchGenerate}
-              className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50"
-            >
-              <Package2 className="w-4 h-4 mr-2" />
-              {isGenerating ? `正在生成 (${progress}%)` : '开始批量生成并打包下载'}
-            </button>
-          </div>
-          <div className="text-sm text-gray-600">点击后会在后台依次生成每张手卡，并最终打包为一个ZIP下载。</div>
-        </div>
+        
 
         {items.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-md font-semibold text-gray-900 mb-3">预览与编辑</h3>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-md font-semibold text-gray-900">预览与编辑</h3>
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${templateType==='landscape' ? 'bg-white border border-gray-300 text-pink-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  onClick={() => setTemplateType('landscape')}
+                >横版</button>
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${templateType==='portrait' ? 'bg-white border border-gray-300 text-pink-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  onClick={() => setTemplateType('portrait')}
+                >竖版</button>
+              </div>
+              <button
+                disabled={isGenerating || rowsCount===0}
+                onClick={batchGenerate}
+                className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50"
+              >
+                <Package2 className="w-4 h-4 mr-2" />
+                {isGenerating ? `正在生成 (${progress}%)` : '开始批量生成并打包下载'}
+              </button>
+            </div>
+            <div className={`grid ${templateType==='portrait' ? 'md:grid-cols-3 gap-4' : 'grid-cols-2 gap-[30px]'}`}>
               {items.map((it, idx) => (
                 <div key={idx} className="bg-white rounded-xl shadow-sm p-3">
-                  <div className="border rounded-lg">
-                    <CardPreview data={it} />
+                  <div className={`inline-block ${templateType==='landscape' ? 'w-full' : 'w-fit'}`}> 
+                    {templateType === 'portrait' ? (
+                      <CardPreview data={it} />
+                    ) : (
+                      // 横版预览
+                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 block w-full h-[300px] overflow-hidden">
+                        <div className="flex items-center justify-between text-gray-900">
+                          <div className="flex items-center gap-[6px]">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+                              {it.brandLogo && (
+                                <img src={it.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+                              )}
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 uppercase">{it.brandName || '品牌'}</div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {it.platforms.map((p: string, i: number) => (
+                              <div key={i} className="platform-badge">{p}</div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-center mt-2">
+                          <h3 className="text-lg font-bold text-gray-900 py-3">{it.productTitle || '产品标题'}</h3>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-2 items-stretch">
+                          <div className="flex flex-col h-full gap-4">
+                            <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm">
+                              {it.mainImage ? (
+                                <img src={it.mainImage} alt="商品图" className="w-full h-full object-cover" />
+                              ) : (
+                                <>商品图</>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col h-full space-y-4">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="rounded-lg bg-black text-white h-16 flex items-center justify-center text-sm">
+                                <div>
+                                  <div className="text-xs text-gray-300">市场价</div>
+                                  <div className="text-sm font-bold">¥{it.marketPrice || 0}</div>
+                                </div>
+                              </div>
+                              <div className="rounded-lg bg-pink-600 text-white h-16 flex items-center justify-center text-sm">
+                                <div>
+                                  <div className="text-xs text-pink-200">直播价</div>
+                                  <div className="text-sm font-bold">¥{it.livePrice || 0}</div>
+                                  {it.discount && (
+                                    <div className="opacity-80 text-xs">{it.discount}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="rounded-lg bg-gray-600 text-white h-16 flex items-center justify-center text-sm">
+                                <div>
+                                  <div className="text-xs text-gray-300">佣金</div>
+                                  <div className="text-sm font-bold">{it.commission || 0}%</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              {it.materials.length > 0 && (
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                  <div className="text-sm font-medium text-gray-700 mb-1">材料</div>
+                                  {it.materials.map((m, index) => (
+                                    <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                                  ))}
+                                </div>
+                              )}
+                              {it.designs.length > 0 && (
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                  <div className="text-sm font-medium text-gray-700 mb-1">设计</div>
+                                  {it.designs.map((m, index) => (
+                                    <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {(it.colors && it.colors.length > 0) || (it.sizes && it.sizes.length > 0) ? (
+                          <div className="grid grid-cols-2 gap-2 mt-4">
+                            {(it.colors && it.colors.length > 0) && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">颜色</h4>
+                                <div className="text-sm text-gray-600">{(it.colors || []).join('、')}</div>
+                              </div>
+                            )}
+                            {(it.sizes && it.sizes.length > 0) && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">尺码</h4>
+                                <div className="text-sm text-gray-600">{it.sizes.join('、')}</div>
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                        {(it.benefits.length > 0 || it.activityTime || it.shippingInfo.shippingTime || it.shippingInfo.insurance || it.shippingInfo.returnPolicy || it.command) && (
+                          <div className="space-y-3 mt-2">
+                            {(it.shippingInfo.shippingTime || it.shippingInfo.insurance || it.shippingInfo.returnPolicy) && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
+                                <div className="text-sm text-gray-600">
+                                  {[
+                                    (it.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                                    it.shippingInfo.shippingTime || '',
+                                    it.shippingInfo.insurance ? '含运费险' : '',
+                                    it.shippingInfo.returnPolicy || ''
+                                  ].filter(Boolean).join(' · ')}
+                                </div>
+                              </div>
+                            )}
+                            {it.benefits.length > 0 && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">直播间福利</h4>
+                                {it.benefits.map((benefit, index) => (
+                                  <div key={index} className="text-sm text-gray-600">{benefit}</div>
+                                ))}
+                              </div>
+                            )}
+                            {(it.activityTime && it.command) ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                                  <div className="text-sm text-gray-600">{it.activityTime}</div>
+                                </div>
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                                  <div className="text-sm text-gray-600 font-mono">{it.command}</div>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {it.activityTime && (
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                                    <div className="text-sm text-gray-600">{it.activityTime}</div>
+                                  </div>
+                                )}
+                                {it.command && (
+                                  <div className="bg-gray-50 rounded-lg p-3">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                                    <div className="text-sm text-gray-600 font-mono">{it.command}</div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-sm text-gray-700 truncate max-w-[65%]">{it.productTitle || `手卡 ${idx+1}`}</div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          setEditingIndex(idx);
-                          setEditing(JSON.parse(JSON.stringify(it)));
+                          try {
+                            resetCardData();
+                            updateCardData({ ...it });
+                            navigate('/editor');
+                          } catch {}
                         }}
                         className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
                       >编辑</button>
@@ -238,7 +459,158 @@ export function BulkImportPage() {
 
         <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
           <div ref={previewRef}>
-            {editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />}
+            {templateType === 'portrait' ? (
+              editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />
+            ) : (
+              (() => {
+                const d = editing ?? (items[0] || null);
+                if (!d) return <CardPreview />;
+                return (
+                  <div className="card-font bg-white rounded-2xl shadow-lg p-6 border border-gray-200 inline-block flex flex-col">
+                    <div className="flex items-center justify-between text-gray-900">
+                      <div className="flex items-center gap-[6px]">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+                          {d.brandLogo && (
+                            <img src={d.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <div className="text-sm font-medium text-gray-900 uppercase">{d.brandName || '品牌'}</div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {d.platforms.map((p: string, i: number) => (
+                          <div key={i} className="platform-badge">{p}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-center mt-2">
+                      <h3 className="text-lg font-bold text-gray-900 py-3">{d.productTitle || '产品标题'}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2 items-stretch">
+                      <div className="flex flex-col h-full gap-4">
+                        <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm">
+                          {d.mainImage ? (
+                            <img src={d.mainImage} alt="商品图" className="w-full h-full object-cover" />
+                          ) : (
+                            <>商品图</>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col h-full space-y-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-lg bg-black text-white h-16 flex items-center justify-center text-sm">
+                            <div>
+                              <div className="text-xs text-gray-300">市场价</div>
+                              <div className="text-sm font-bold">¥{d.marketPrice || 0}</div>
+                            </div>
+                          </div>
+                          <div className="rounded-lg bg-pink-600 text-white h-16 flex items-center justify-center text-sm">
+                            <div>
+                              <div className="text-xs text-pink-200">直播价</div>
+                              <div className="text-sm font-bold">¥{d.livePrice || 0}</div>
+                              {d.discount && (
+                                <div className="opacity-80 text-xs">{d.discount}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="rounded-lg bg-gray-600 text-white h-16 flex items-center justify-center text-sm">
+                            <div>
+                              <div className="text-xs text-gray-300">佣金</div>
+                              <div className="text-sm font-bold">{d.commission || 0}%</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {d.materials.length > 0 && (
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-700 mb-1">材料</div>
+                              {d.materials.map((m, index) => (
+                                <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                              ))}
+                            </div>
+                          )}
+                          {d.designs.length > 0 && (
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="text-sm font-medium text-gray-700 mb-1">设计</div>
+                              {d.designs.map((m, index) => (
+                                <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {(d.colors && d.colors.length > 0) || (d.sizes && d.sizes.length > 0) ? (
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        {(d.colors && d.colors.length > 0) && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">颜色</h4>
+                            <div className="text-sm text-gray-600">{(d.colors || []).join('、')}</div>
+                          </div>
+                        )}
+                        {(d.sizes && d.sizes.length > 0) && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">尺码</h4>
+                            <div className="text-sm text-gray-600">{d.sizes.join('、')}</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    {(d.benefits.length > 0 || d.activityTime || d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy || d.command) && (
+                      <div className="space-y-3 mt-2">
+                        {(d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy) && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
+                            <div className="text-sm text-gray-600">
+                              {[
+                                (d.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                                d.shippingInfo.shippingTime || '',
+                                d.shippingInfo.insurance ? '含运费险' : '',
+                                d.shippingInfo.returnPolicy || ''
+                              ].filter(Boolean).join(' · ')}
+                            </div>
+                          </div>
+                        )}
+                        {d.benefits.length > 0 && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">直播间福利</h4>
+                            {d.benefits.map((benefit, index) => (
+                              <div key={index} className="text-sm text-gray-600">{benefit}</div>
+                            ))}
+                          </div>
+                        )}
+                        {(d.activityTime && d.command) ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                              <div className="text-sm text-gray-600">{d.activityTime}</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                              <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {d.activityTime && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                                <div className="text-sm text-gray-600">{d.activityTime}</div>
+                              </div>
+                            )}
+                            {d.command && (
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                                <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       </div>

@@ -58,41 +58,52 @@ export async function parseExcel(file: File): Promise<ExcelParseResult> {
   const ws = wb.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
 
+  const pick = (r: Record<string, any>, keys: string[]): any => {
+    for (const k of keys) {
+      if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') return r[k];
+    }
+    return '';
+  };
+
   const result: CardData[] = rows.map((r, idx) => {
+    const shippingTypeRaw = String(pick(r, ['发货类型', 'shippingType']) || 'presale').trim().toLowerCase();
+    const type: 'presale' | 'instock' = (shippingTypeRaw === 'instock' || shippingTypeRaw === '现货') ? 'instock' : 'presale';
     const shipping: ShippingInfo = {
-      type: (String(r['shippingType'] || 'presale').trim() === 'instock' ? 'instock' : 'presale'),
-      shippingTime: String(r['shippingTime'] || ''),
-      returnPolicy: String(r['returnPolicy'] || ''),
-      insurance: parseBoolean(r['insurance'])
+      type,
+      shippingTime: String(pick(r, ['发货时间', 'shippingTime']) || ''),
+      returnPolicy: String(pick(r, ['退换政策', '退换货政策', 'returnPolicy']) || ''),
+      insurance: parseBoolean(pick(r, ['包含运费险', 'insurance']))
     };
 
-    const sizeChart = parseSizeChart(r['sizeChartJson']);
-    const sizeRecommendations = parseSizeRecs(r['sizeRecsJson']);
+    const sizeChart = parseSizeChart(pick(r, ['尺码表JSON', 'sizeChartJson']));
+    const sizeRecommendations = parseSizeRecs(pick(r, ['尺码推荐JSON', 'sizeRecsJson']));
 
-    const parsedColors = (toArray(r['colors']).length ? toArray(r['colors']) : toArray(r['color']));
+    const parsedColors = (toArray(pick(r, ['颜色', 'colors']))?.length ? toArray(pick(r, ['颜色', 'colors'])) : toArray(pick(r, ['color'])));
     const card: CardData = {
-      platforms: toArray(r['platforms']).length ? toArray(r['platforms']) : ['小红书'],
-      productTitle: String(r['productTitle'] || ''),
-      materials: parseMaterials(r['materials']),
-      designs: parseDesigns(r['designs']),
-      marketPrice: Number(r['marketPrice'] || 0),
-      livePrice: Number(r['livePrice'] || 0),
-      discount: String(r['discount'] || ''),
-      commission: Number(r['commission'] || 0),
-      mainImage: String(r['mainImage'] || ''),
-      backImage: String(r['backImage'] || ''),
+      platforms: toArray(pick(r, ['平台', 'platforms']))?.length ? toArray(pick(r, ['平台', 'platforms'])) : ['小红书'],
+      productTitle: String(pick(r, ['产品标题', 'productTitle']) || ''),
+      brandName: String(pick(r, ['品牌名称', 'brandName']) || ''),
+      brandLogo: String(pick(r, ['品牌Logo', 'brandLogo']) || ''),
+      materials: parseMaterials(pick(r, ['材料', 'materials'])),
+      designs: parseDesigns(pick(r, ['设计', 'designs'])),
+      marketPrice: Number(pick(r, ['市场价', 'marketPrice']) || 0),
+      livePrice: Number(pick(r, ['直播价', 'livePrice']) || 0),
+      discount: String(pick(r, ['折扣信息', 'discount']) || ''),
+      commission: Number(pick(r, ['佣金比例', '佣金', 'commission']) || 0),
+      mainImage: String(pick(r, ['主图', '商品图', 'mainImage']) || ''),
+      backImage: String(pick(r, ['背面图', 'backImage']) || ''),
       sizeChart,
       sizeRecommendations,
-      benefits: toArray(r['benefits']),
-      activityTime: String(r['activityTime'] || ''),
+      benefits: toArray(pick(r, ['直播间福利', 'benefits'])),
+      activityTime: String(pick(r, ['活动时间', 'activityTime']) || ''),
       shippingInfo: shipping,
-      command: String(r['command'] || ''),
+      command: String(pick(r, ['直播口令', 'command']) || ''),
       color: parsedColors[0] || '',
       colors: parsedColors,
-      sizes: toArray(r['sizes'])
+      sizes: toArray(pick(r, ['尺码', 'sizes']))
     };
 
-    if (!card.productTitle) errors.push(`第${idx + 1}行缺少 productTitle`);
+    if (!card.productTitle) errors.push(`第${idx + 1}行缺少 产品标题`);
     return card;
   });
 
@@ -101,51 +112,53 @@ export async function parseExcel(file: File): Promise<ExcelParseResult> {
 
 export function downloadTemplate() {
   const headers = [
-    'platforms',
-    'productTitle',
-    'materials',
-    'designs',
-    'marketPrice',
-    'livePrice',
-    'discount',
-    'commission',
-    'mainImage',
-    'backImage',
-    'colors',
-    'sizes',
-    'benefits',
-    'activityTime',
-    'shippingType',
-    'shippingTime',
-    'returnPolicy',
-    'insurance',
-    'command',
-    'sizeChartJson',
-    'sizeRecsJson'
+    '产品标题',
+    '市场价',
+    '直播价',
+    '佣金比例',
+    '平台',
+    '品牌名称',
+    '品牌Logo',
+    '颜色',
+    '尺码',
+    '材料',
+    '设计',
+    '主图',
+    '背面图',
+    '直播间福利',
+    '活动时间',
+    '发货类型',
+    '发货时间',
+    '退换政策',
+    '包含运费险',
+    '直播口令',
+    '尺码表JSON',
+    '尺码推荐JSON'
   ];
 
-  const sample = {
-    platforms: '小红书;淘宝;抖音',
-    productTitle: '毛领奢美人马甲 两面穿羊毛保暖马夹',
-    materials: '衣身100%仿羊毛;优质环保狐狸毛毛领',
-    designs: '西装封里;U形拉链;正反可穿',
-    marketPrice: 1102,
-    livePrice: 914,
-    discount: '史低8.3折',
-    commission: 25,
-    mainImage: 'https://picsum.photos/id/200/600/600',
-    backImage: 'https://picsum.photos/id/201/600/600',
-    colors: '黑色;白色',
-    sizes: '0;2',
-    benefits: '盲盒发夹(1)+海岛花发夹(1)',
-    activityTime: '此刻至2026-01-31',
-    shippingType: 'presale',
-    shippingTime: '5天内发货',
-    returnPolicy: '7天无理由退换货，有运费险',
-    insurance: true,
-    command: 'dbisFPXYET2J',
-    sizeChartJson: JSON.stringify(defaultSizeChart),
-    sizeRecsJson: JSON.stringify([
+  const sample: Record<string, any> = {
+    产品标题: '毛领奢美人马甲 两面穿羊毛保暖马夹',
+    市场价: 1102,
+    直播价: 914,
+    佣金比例: 25,
+    平台: '小红书;淘宝;抖音',
+    品牌名称: 'WEIQIN',
+    品牌Logo: 'https://picsum.photos/id/12/120/120',
+    颜色: '黑色;白色',
+    尺码: '0;2',
+    材料: '衣身100%仿羊毛;优质环保狐狸毛毛领',
+    设计: '西装封里;U形拉链;正反可穿',
+    主图: 'https://picsum.photos/id/200/600/600',
+    背面图: 'https://picsum.photos/id/201/600/600',
+    直播间福利: '盲盒发夹(1)+海岛花发夹(1)',
+    活动时间: '此刻至2026-01-31',
+    发货类型: '预售',
+    发货时间: '5天内发货',
+    退换政策: '7天无理由',
+    包含运费险: '是',
+    直播口令: 'dbisFPXYET2J',
+    尺码表JSON: JSON.stringify(defaultSizeChart),
+    尺码推荐JSON: JSON.stringify([
       { height: 160, weight: 50, recommendedSize: '0' },
       { height: 170, weight: 60, recommendedSize: '2' }
     ])
