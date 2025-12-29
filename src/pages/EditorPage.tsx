@@ -197,7 +197,7 @@ export function EditorPage() {
           </div>
         )}
         
-        {(cardData.benefits.length > 0 || cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.command) && (
+        {(cardData.benefits.length > 0 || cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.shippingInfo.insurance || cardData.shippingInfo.returnPolicy || cardData.command) && (
           <div className="space-y-3 mt-2">
             {cardData.benefits.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3">
@@ -213,11 +213,16 @@ export function EditorPage() {
                 <div className="text-sm text-gray-600">{cardData.activityTime}</div>
               </div>
             )}
-            {cardData.shippingInfo.shippingTime && (
+            {(cardData.shippingInfo.shippingTime || cardData.shippingInfo.insurance || cardData.shippingInfo.returnPolicy) && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
                 <div className="text-sm text-gray-600">
-                  {(cardData.shippingInfo.type === 'presale' ? '预售' : '现货')} · {cardData.shippingInfo.shippingTime}{cardData.shippingInfo.insurance ? ' · 含运费险' : ''}{cardData.shippingInfo.returnPolicy ? ` · ${cardData.shippingInfo.returnPolicy}` : ''}
+                  {[
+                    (cardData.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                    cardData.shippingInfo.shippingTime || '',
+                    cardData.shippingInfo.insurance ? '含运费险' : '',
+                    cardData.shippingInfo.returnPolicy || ''
+                  ].filter(Boolean).join(' · ')}
                 </div>
               </div>
             )}

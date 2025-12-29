@@ -194,11 +194,16 @@ export function CardPreview({ data }: { data?: CardData }) {
               </div>
             )}
 
-            {d.shippingInfo.shippingTime && (
+            {(d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy) && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
                 <div className="text-sm text-gray-600">
-                  {d.shippingInfo.type === 'presale' ? '预售' : '现货'} · {d.shippingInfo.shippingTime}{d.shippingInfo.insurance ? ' · 含运费险' : ''}{d.shippingInfo.returnPolicy ? ` · ${d.shippingInfo.returnPolicy}` : ''}
+                  {[
+                    (d.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                    d.shippingInfo.shippingTime || '',
+                    d.shippingInfo.insurance ? '含运费险' : '',
+                    d.shippingInfo.returnPolicy || ''
+                  ].filter(Boolean).join(' · ')}
                 </div>
               </div>
             )}
