@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { CardData, MaterialItem, DesignItem, SizeChart, ShippingInfo, SizeRecommendation } from '../types/card';
 
 export interface ExcelParseResult {
@@ -165,6 +165,48 @@ export function downloadTemplate() {
   };
 
   const ws = XLSX.utils.json_to_sheet([sample], { header: headers });
+  // 设置列宽（字符数）与行高
+  ws['!cols'] = headers.map(() => ({ wch: 18 }));
+  const headerHeight = 26 * 3; // 3倍高度
+  const otherHeight = 26 * 4;  // 4倍高度
+  const totalPresetRows = 200;
+  ws['!rows'] = Array.from({ length: totalPresetRows }, (_, i) => ({ hpt: i === 0 ? headerHeight : otherHeight }));
+
+  // 头部样式：居中、加粗，重要字段黄色，其他浅蓝
+  const important = new Set(['市场价', '直播价', '佣金比例']);
+  const colToA = (colIndex: number) => {
+    let s = '';
+    let n = colIndex + 1;
+    while (n > 0) {
+      const m = (n - 1) % 26;
+      s = String.fromCharCode(65 + m) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  };
+  headers.forEach((h, i) => {
+    const addr = colToA(i) + '1';
+    const cell = ws[addr];
+    if (cell) {
+      (cell as any).s = {
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        font: { bold: true, sz: 16, color: { rgb: '000000' } },
+        fill: { fgColor: { rgb: important.has(h) ? 'FFF3B0' : 'E6F0FF' } }
+      };
+    }
+  });
+
+  // 数据行字体统一为16号，水平向左对齐、垂直居中
+  headers.forEach((_, i) => {
+    const addrData = colToA(i) + '2';
+    const cell = ws[addrData];
+    if (cell) {
+      (cell as any).s = {
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        font: { sz: 16, color: { rgb: '000000' } }
+      };
+    }
+  });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '手卡数据');
   XLSX.writeFile(wb, '手卡模板.xlsx');

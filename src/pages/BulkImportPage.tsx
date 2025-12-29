@@ -354,12 +354,34 @@ export function BulkImportPage() {
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-sm text-gray-700 truncate max-w-[65%]">{it.productTitle || `手卡 ${idx+1}`}</div>
                     <div className="flex items-center gap-2">
+                      <label className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 cursor-pointer">
+                        商品图
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const url = String(reader.result || '');
+                              setItems(prev => prev.map((row, i) => i === idx ? { ...row, mainImage: url } : row));
+                              if (editingIndex === idx && editing) {
+                                setEditing({ ...editing, mainImage: url });
+                                updateCardData({ mainImage: url });
+                              }
+                              e.currentTarget.value = '';
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
                       <button
                         onClick={() => {
                           try {
-                            resetCardData();
-                            updateCardData({ ...it });
-                            navigate('/editor');
+                            setEditingIndex(idx);
+                            setEditing(JSON.parse(JSON.stringify(it)));
                           } catch {}
                         }}
                         className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
@@ -383,75 +405,212 @@ export function BulkImportPage() {
         <Dialog.Root open={editingIndex !== null} onOpenChange={(o) => { if (!o) { setEditingIndex(null); setEditing(null); } }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] bg-white rounded-xl shadow-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">编辑手卡</h3>
-              {editing && (
-                <div className="space-y-3">
-                  <input
-                    value={editing.productTitle}
-                    onChange={(e) => setEditing({ ...editing, productTitle: e.target.value })}
-                    className="w-full px-3 py-2 border rounded"
-                    placeholder="产品标题"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="number"
-                      value={editing.marketPrice}
-                      onChange={(e) => setEditing({ ...editing, marketPrice: parseFloat(e.target.value || '0') })}
-                      className="w-full px-3 py-2 border rounded"
-                      placeholder="市场价"
-                    />
-                    <input
-                      type="number"
-                      value={editing.livePrice}
-                      onChange={(e) => setEditing({ ...editing, livePrice: parseFloat(e.target.value || '0') })}
-                      className="w-full px-3 py-2 border rounded"
-                      placeholder="直播价"
-                    />
+            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] max-h-[80vh] bg-white rounded-xl shadow-xl p-0 flex flex-col">
+              <div className="px-6 py-4 border-b bg-white">
+                <h3 className="text-lg font-semibold">编辑手卡</h3>
+              </div>
+              <div className="px-6 py-4 flex-1 overflow-y-auto">
+                <div className="flex gap-6">
+                  <div className="basis-[35%] min-w-[320px] space-y-3">
+                    {editing && (
+                      <>
+                        <input value={editing.productTitle} onChange={(e)=>setEditing({ ...editing, productTitle: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="产品标题" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <input type="number" value={editing.marketPrice} onChange={(e)=>setEditing({ ...editing, marketPrice: parseFloat(e.target.value || '0') })} className="w-full px-3 py-2 border rounded" placeholder="市场价" />
+                          <input type="number" value={editing.livePrice} onChange={(e)=>setEditing({ ...editing, livePrice: parseFloat(e.target.value || '0') })} className="w-full px-3 py-2 border rounded" placeholder="直播价" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input value={editing.discount} onChange={(e)=>setEditing({ ...editing, discount: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="折扣信息" />
+                          <input type="number" value={editing.commission} onChange={(e)=>setEditing({ ...editing, commission: parseFloat(e.target.value || '0') })} className="w-full px-3 py-2 border rounded" placeholder="佣金比例%" />
+                        </div>
+                        <input value={editing.brandName || ''} onChange={(e)=>setEditing({ ...editing, brandName: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="品牌名称" />
+                        <textarea value={(editing.materials||[]).map(m=>m.text).join('\n')} onChange={(e)=>setEditing({ ...editing, materials: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean).map(t=>({ text: t })) })} className="w-full px-3 py-2 border rounded h-24" placeholder="材料（每行一条）" />
+                        <textarea value={(editing.designs||[]).map(d=>d.text).join('\n')} onChange={(e)=>setEditing({ ...editing, designs: e.target.value.split('\n').map(t=>t.trim()).filter(Boolean).map(t=>({ text: t })) })} className="w-full px-3 py-2 border rounded h-24" placeholder="设计（每行一条）" />
+                        <input value={(editing.colors||[]).join(', ')} onChange={(e)=>setEditing({ ...editing, colors: e.target.value.split(',').map(s=>s.trim()).filter(Boolean), color: e.target.value.split(',').map(s=>s.trim()).filter(Boolean)[0] || '' })} className="w-full px-3 py-2 border rounded" placeholder="颜色，逗号分隔" />
+                        <input value={(editing.sizes||[]).join(', ')} onChange={(e)=>setEditing({ ...editing, sizes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) })} className="w-full px-3 py-2 border rounded" placeholder="尺码，逗号分隔" />
+                        <textarea value={(editing.benefits||[]).join('\n')} onChange={(e)=>setEditing({ ...editing, benefits: e.target.value.split('\n').map(s=>s.trim()).filter(Boolean) })} className="w-full px-3 py-2 border rounded h-24" placeholder="直播间福利（每行一条）" />
+                        <input value={editing.activityTime || ''} onChange={(e)=>setEditing({ ...editing, activityTime: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="活动时间" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <select value={editing.shippingInfo?.type || 'presale'} onChange={(e)=>setEditing({ ...editing, shippingInfo: { ...(editing.shippingInfo||{ type:'presale', shippingTime:'', returnPolicy:'', insurance:false }), type: e.target.value as any } })} className="w-full px-3 py-2 border rounded">
+                            <option value="presale">预售</option>
+                            <option value="instock">现货</option>
+                          </select>
+                          <input value={editing.shippingInfo?.shippingTime || ''} onChange={(e)=>setEditing({ ...editing, shippingInfo: { ...(editing.shippingInfo||{ type:'presale', shippingTime:'', returnPolicy:'', insurance:false }), shippingTime: e.target.value } })} className="w-full px-3 py-2 border rounded" placeholder="发货时间" />
+                        </div>
+                        <input value={editing.shippingInfo?.returnPolicy || ''} onChange={(e)=>setEditing({ ...editing, shippingInfo: { ...(editing.shippingInfo||{ type:'presale', shippingTime:'', returnPolicy:'', insurance:false }), returnPolicy: e.target.value } })} className="w-full px-3 py-2 border rounded" placeholder="退换政策" />
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={!!editing.shippingInfo?.insurance} onChange={(e)=>setEditing({ ...editing, shippingInfo: { ...(editing.shippingInfo||{ type:'presale', shippingTime:'', returnPolicy:'', insurance:false }), insurance: e.target.checked } })} />
+                          含运费险
+                        </label>
+                        <input value={editing.command || ''} onChange={(e)=>setEditing({ ...editing, command: e.target.value })} className="w-full px-3 py-2 border rounded" placeholder="直播口令" />
+                      </>
+                    )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      value={editing.discount}
-                      onChange={(e) => setEditing({ ...editing, discount: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
-                      placeholder="折扣信息"
-                    />
-                    <input
-                      type="number"
-                      value={editing.commission}
-                      onChange={(e) => setEditing({ ...editing, commission: parseFloat(e.target.value || '0') })}
-                      className="w-full px-3 py-2 border rounded"
-                      placeholder="佣金比例%"
-                    />
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-700 mb-2">预览</div>
+                    <div className="border rounded-lg p-3 bg-gray-50">
+                      {editing && (
+                        templateType === 'portrait' ? (
+                          <CardPreview data={editing} />
+                        ) : (
+                          (() => {
+                            const d = editing;
+                            return (
+                              <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 block w-full">
+                                <div className="flex items-center justify-between text-gray-900">
+                                  <div className="flex items-center gap-[6px]">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+                                      {d.brandLogo && (
+                                        <img src={d.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+                                      )}
+                                    </div>
+                                    <div className="text-sm font-medium text-gray-900 uppercase">{d.brandName || '品牌'}</div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {d.platforms.map((p: string, i: number) => (
+                                      <div key={i} className="platform-badge">{p}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="text-center mt-2">
+                                  <h3 className="text-lg font-bold text-gray-900 py-3">{d.productTitle || '产品标题'}</h3>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-2 items-stretch">
+                                  <div className="flex flex-col h-full gap-4">
+                                    <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm">
+                                      {d.mainImage ? (
+                                        <img src={d.mainImage} alt="商品图" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <>商品图</>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col h-full space-y-4">
+                                    <div className="grid grid-cols-3 gap-2">
+                                      <div className="rounded-lg bg-black text-white h-16 flex items-center justify-center text-sm">
+                                        <div>
+                                          <div className="text-xs text-gray-300">市场价</div>
+                                          <div className="text-sm font-bold">¥{d.marketPrice || 0}</div>
+                                        </div>
+                                      </div>
+                                      <div className="rounded-lg bg-pink-600 text-white h-16 flex items-center justify-center text-sm">
+                                        <div>
+                                          <div className="text-xs text-pink-200">直播价</div>
+                                          <div className="text-sm font-bold">¥{d.livePrice || 0}</div>
+                                          {d.discount && (
+                                            <div className="opacity-80 text-xs">{d.discount}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-600 text-white h-16 flex items-center justify-center text-sm">
+                                        <div>
+                                          <div className="text-xs text-gray-300">佣金</div>
+                                          <div className="text-sm font-bold">{d.commission || 0}%</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {d.materials.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                          <div className="text-sm font-medium text-gray-700 mb-1">材料</div>
+                                          {d.materials.map((m: any, index: number) => (
+                                            <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {d.designs.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                          <div className="text-sm font-medium text-gray-700 mb-1">设计</div>
+                                          {d.designs.map((m: any, index: number) => (
+                                            <div key={index} className="text-sm text-gray-600 mb-1">{index + 1}. {m.text}</div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {(d.colors && d.colors.length > 0) || (d.sizes && d.sizes.length > 0) ? (
+                                  <div className="grid grid-cols-2 gap-2 mt-4">
+                                    {(d.colors && d.colors.length > 0) && (
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-1">颜色</h4>
+                                        <div className="text-sm text-gray-600">{(d.colors || []).join('、')}</div>
+                                      </div>
+                                    )}
+                                    {(d.sizes && d.sizes.length > 0) && (
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-1">尺码</h4>
+                                        <div className="text-sm text-gray-600">{d.sizes.join('、')}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : null}
+                                {(d.benefits.length > 0 || d.activityTime || d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy || d.command) && (
+                                  <div className="space-y-3 mt-2">
+                                    {(d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy) && (
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
+                                        <div className="text-sm text-gray-600">
+                                          {[
+                                            (d.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                                            d.shippingInfo.shippingTime || '',
+                                            d.shippingInfo.insurance ? '含运费险' : '',
+                                            d.shippingInfo.returnPolicy || ''
+                                          ].filter(Boolean).join(' · ')}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {d.benefits.length > 0 && (
+                                      <div className="bg-gray-50 rounded-lg p-3">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-1">直播间福利</h4>
+                                        {d.benefits.map((benefit: string, index: number) => (
+                                          <div key={index} className="text-sm text-gray-600">{benefit}</div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {(d.activityTime && d.command) ? (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                          <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                                          <div className="text-sm text-gray-600">{d.activityTime}</div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                          <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                                          <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        {d.activityTime && (
+                                          <div className="bg-gray-50 rounded-lg p-3">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                                            <div className="text-sm text-gray-600">{d.activityTime}</div>
+                                          </div>
+                                        )}
+                                        {d.command && (
+                                          <div className="bg-gray-50 rounded-lg p-3">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                                            <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()
+                        )
+                      )}
+                    </div>
                   </div>
-                  <input
-                    value={(editing.colors || []).join(', ')}
-                    onChange={(e) => setEditing({ ...editing, colors: e.target.value.split(',').map(s => s.trim()).filter(Boolean), color: e.target.value.split(',').map(s => s.trim()).filter(Boolean)[0] || '' })}
-                    className="w-full px-3 py-2 border rounded"
-                    placeholder="颜色，逗号分隔"
-                  />
-                  <input
-                    value={(editing.sizes || []).join(', ')}
-                    onChange={(e) => setEditing({ ...editing, sizes: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                    className="w-full px-3 py-2 border rounded"
-                    placeholder="尺码，逗号分隔"
-                  />
                 </div>
-              )}
-              <div className="flex justify-end gap-2 mt-4">
-                <Dialog.Close className="px-3 py-2 bg-gray-100 rounded">取消</Dialog.Close>
-                <button
-                  onClick={() => {
-                    if (editingIndex !== null && editing) {
-                      const arr = [...items];
-                      arr[editingIndex] = editing;
-                      setItems(arr);
-                      setEditingIndex(null);
-                      setEditing(null);
-                    }
-                  }}
-                  className="px-3 py-2 bg-pink-600 text-white rounded"
-                >保存</button>
+              </div>
+              <div className="px-6 py-4 border-t bg.white">
+                <div className="flex justify-end gap-2">
+                  <Dialog.Close className="px-3 py-2 bg-gray-100 rounded">关闭</Dialog.Close>
+                  <button onClick={()=>{ if (editingIndex !== null && editing) { const arr = [...items]; arr[editingIndex] = editing; setItems(arr); setEditingIndex(null); setEditing(null); } }} className="px-3 py-2 bg-pink-600 text-white rounded">保存</button>
+                </div>
               </div>
             </Dialog.Content>
           </Dialog.Portal>
