@@ -83,6 +83,66 @@ export function BenefitsForm() {
 
   return (
     <div className="space-y-6">
+      
+
+      {/* 发货信息 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">发货信息</label>
+        
+        {/* 发货类型 */}
+        <div className="flex space-x-4 mb-3">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              checked={cardData.shippingInfo.type === 'presale'}
+              onChange={() => handleShippingTypeChange('presale')}
+              className="mr-2 text-pink-600 focus:ring-pink-500"
+            />
+            预售
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              checked={cardData.shippingInfo.type === 'instock'}
+              onChange={() => handleShippingTypeChange('instock')}
+              className="mr-2 text-pink-600 focus:ring-pink-500"
+            />
+            现货
+          </label>
+        </div>
+
+        {/* 发货时间 */}
+        <input
+          type="text"
+          value={cardData.shippingInfo.shippingTime}
+          onChange={(e) => handleShippingTimeChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent mb-3"
+          placeholder="如：5天内发货"
+        />
+
+        {/* 退换货政策 */}
+        <label className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={!!cardData.shippingInfo.returnPolicy}
+            onChange={(e) => handleReturnPolicyChange(e.target.checked ? '7天无理由' : '')}
+            className="mr-2 text-pink-600 focus:ring-pink-500 rounded"
+          />
+          <span className="text-sm text-gray-700">7天无理由</span>
+        </label>
+
+        {/* 运费险 */}
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={cardData.shippingInfo.insurance}
+            onChange={(e) => handleInsuranceChange(e.target.checked)}
+            className="mr-2 text-pink-600 focus:ring-pink-500 rounded"
+          />
+          <span className="text-sm text-gray-700">包含运费险</span>
+        </label>
+      </div>
+
       {/* 直播间福利 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">直播间福利</label>
@@ -144,70 +204,12 @@ export function BenefitsForm() {
           type="text"
           value={cardData.activityTime}
           onChange={(e) => handleActivityTimeChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-          placeholder="如：此刻至2026.01.31（管阿姨专属）"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm"
+          placeholder="此刻至2026.01.31"
         />
         <p className="text-xs text-gray-500 mt-1">
           描述活动有效时间
         </p>
-      </div>
-
-      {/* 发货信息 */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">发货信息</label>
-        
-        {/* 发货类型 */}
-        <div className="flex space-x-4 mb-3">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              checked={cardData.shippingInfo.type === 'presale'}
-              onChange={() => handleShippingTypeChange('presale')}
-              className="mr-2 text-pink-600 focus:ring-pink-500"
-            />
-            预售
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              checked={cardData.shippingInfo.type === 'instock'}
-              onChange={() => handleShippingTypeChange('instock')}
-              className="mr-2 text-pink-600 focus:ring-pink-500"
-            />
-            现货
-          </label>
-        </div>
-
-        {/* 发货时间 */}
-        <input
-          type="text"
-          value={cardData.shippingInfo.shippingTime}
-          onChange={(e) => handleShippingTimeChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent mb-3"
-          placeholder="如：5天内发货"
-        />
-
-        {/* 退换货政策 */}
-        <label className="flex items-center mb-3">
-          <input
-            type="checkbox"
-            checked={!!cardData.shippingInfo.returnPolicy}
-            onChange={(e) => handleReturnPolicyChange(e.target.checked ? '7天无理由' : '')}
-            className="mr-2 text-pink-600 focus:ring-pink-500 rounded"
-          />
-          <span className="text-sm text-gray-700">7天无理由</span>
-        </label>
-
-        {/* 运费险 */}
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={cardData.shippingInfo.insurance}
-            onChange={(e) => handleInsuranceChange(e.target.checked)}
-            className="mr-2 text-pink-600 focus:ring-pink-500 rounded"
-          />
-          <span className="text-sm text-gray-700">包含运费险</span>
-        </label>
       </div>
 
       {/* 直播口令 */}
@@ -217,7 +219,7 @@ export function BenefitsForm() {
           type="text"
           value={cardData.command}
           onChange={(e) => handleCommandChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent font-mono"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm font-mono"
           placeholder="如：dbisFPXYET2J"
         />
         <p className="text-xs text-gray-500 mt-1">

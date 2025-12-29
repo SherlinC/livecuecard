@@ -94,13 +94,16 @@ export function BasicInfoForm() {
           />
           <div className="flex items-center gap-3">
             <div
-              className="group relative w-12 h-12 rounded-full overflow-hidden bg-black cursor-pointer"
+              className="group relative w-[36px] h-[36px] rounded-full overflow-hidden bg-gray-200 cursor-pointer"
               onClick={triggerLogoInput}
             >
               {cardData.brandLogo ? (
                 <img src={cardData.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-white">+logo</div>
+                <div className="w-full h-full flex items-center justify-center text-xs text-gray-700">
+                  <span className="inline group-hover:hidden">Logo</span>
+                  <span className="hidden group-hover:inline">+</span>
+                </div>
               )}
               {cardData.brandLogo && (
                 <button
@@ -174,14 +177,13 @@ export function BasicInfoForm() {
             </div>
           ))}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500 w-6">{cardData.materials.length + 1}.</span>
             <input
               type="text"
               value={newMaterial}
               onChange={(e) => setNewMaterial(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addMaterial()}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
-              placeholder="添加材料信息"
+              placeholder={`${cardData.materials.length + 1}. 添加材料信息`}
             />
             <button
               type="button"
@@ -230,14 +232,13 @@ export function BasicInfoForm() {
             </div>
           ))}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500 w-6">{cardData.designs.length + 1}.</span>
             <input
               type="text"
               value={newDesign}
               onChange={(e) => setNewDesign(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addDesign()}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
-              placeholder="添加设计特点"
+              placeholder={`${cardData.designs.length + 1}. 添加设计特点`}
             />
             <button
               type="button"
@@ -289,7 +290,6 @@ export function BasicInfoForm() {
             </div>
           ))}
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500 w-6">{(cardData.colors?.length ?? 0) + 1}.</span>
             <input
               type="text"
               value={newColor}
@@ -302,7 +302,7 @@ export function BasicInfoForm() {
                 }
               }}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
-              placeholder="如：黑色、白色、红色"
+              placeholder={`${(cardData.colors?.length ?? 0) + 1}. 如：黑色、白色、红色`}
             />
             <button
               type="button"

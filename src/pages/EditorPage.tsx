@@ -199,6 +199,19 @@ export function EditorPage() {
         
         {(cardData.benefits.length > 0 || cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.shippingInfo.insurance || cardData.shippingInfo.returnPolicy || cardData.command) && (
           <div className="space-y-3 mt-2">
+            {(cardData.shippingInfo.shippingTime || cardData.shippingInfo.insurance || cardData.shippingInfo.returnPolicy) && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
+                <div className="text-sm text-gray-600">
+                  {[
+                    (cardData.shippingInfo.type === 'presale' ? '预售' : '现货'),
+                    cardData.shippingInfo.shippingTime || '',
+                    cardData.shippingInfo.insurance ? '含运费险' : '',
+                    cardData.shippingInfo.returnPolicy || ''
+                  ].filter(Boolean).join(' · ')}
+                </div>
+              </div>
+            )}
             {cardData.benefits.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">直播间福利</h4>
@@ -211,19 +224,6 @@ export function EditorPage() {
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
                 <div className="text-sm text-gray-600">{cardData.activityTime}</div>
-              </div>
-            )}
-            {(cardData.shippingInfo.shippingTime || cardData.shippingInfo.insurance || cardData.shippingInfo.returnPolicy) && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
-                <div className="text-sm text-gray-600">
-                  {[
-                    (cardData.shippingInfo.type === 'presale' ? '预售' : '现货'),
-                    cardData.shippingInfo.shippingTime || '',
-                    cardData.shippingInfo.insurance ? '含运费险' : '',
-                    cardData.shippingInfo.returnPolicy || ''
-                  ].filter(Boolean).join(' · ')}
-                </div>
               </div>
             )}
             {cardData.command && (

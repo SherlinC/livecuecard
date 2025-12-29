@@ -34,34 +34,37 @@ export function CardPreview({ data }: { data?: CardData }) {
           </h3>
         </div>
 
-        {/* 产品图片（正面/背面并排） */}
-        {(d.mainImage || d.backImage) && (
-          <div className={`${cardData.mainImage && cardData.backImage ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
-            {d.mainImage && (
-              <div className="rounded-lg overflow-hidden">
-                <div className="aspect-square">
-                  <img
-                    src={d.mainImage}
-                    alt="产品正面"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+        {/* 产品图片（正面/背面并排或占位） */}
+        <div className={`${cardData.mainImage && cardData.backImage ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
+          {d.mainImage && (
+            <div className="rounded-lg overflow-hidden">
+              <div className="aspect-square">
+                <img
+                  src={d.mainImage}
+                  alt="产品正面"
+                  className="w-full h-full object-cover"
+                />
               </div>
-            )}
-            {d.backImage && (
-              <div className="bg-gray-200 rounded-lg overflow-hidden">
-                <div className="aspect-square">
-                  <img
-                    src={d.backImage}
-                    alt="产品背面"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-center text-xs text-gray-600 mt-1">背面</div>
+            </div>
+          )}
+          {d.backImage && (
+            <div className="bg-gray-200 rounded-lg overflow-hidden">
+              <div className="aspect-square">
+                <img
+                  src={d.backImage}
+                  alt="产品背面"
+                  className="w-full h-full object-cover"
+                />
               </div>
-            )}
-          </div>
-        )}
+              <div className="text-center text-xs text-gray-600 mt-1">背面</div>
+            </div>
+          )}
+          {!d.mainImage && !d.backImage && (
+            <div className="bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm w-full max-w-[280px]">
+              <div className="aspect-square w-full flex items-center justify-center">商品图</div>
+            </div>
+          )}
+        </div>
 
         {/* 材料信息 */}
         {d.materials.length > 0 && (
@@ -186,7 +189,7 @@ export function CardPreview({ data }: { data?: CardData }) {
                 ))}
               </div>
             )}
-            
+
             {d.activityTime && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
