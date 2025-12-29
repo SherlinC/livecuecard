@@ -190,13 +190,6 @@ export function CardPreview({ data }: { data?: CardData }) {
               </div>
             )}
 
-            {d.activityTime && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
-                <div className="text-sm text-gray-600">{d.activityTime}</div>
-              </div>
-            )}
-
             {(d.shippingInfo.shippingTime || d.shippingInfo.insurance || d.shippingInfo.returnPolicy) && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">发货信息</h4>
@@ -211,11 +204,32 @@ export function CardPreview({ data }: { data?: CardData }) {
               </div>
             )}
 
-            {d.command && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
-                <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+            {(d.activityTime && d.command) ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                  <div className="text-sm text-gray-600">{d.activityTime}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                  <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                </div>
               </div>
+            ) : (
+              <>
+                {d.activityTime && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                    <div className="text-sm text-gray-600">{d.activityTime}</div>
+                  </div>
+                )}
+                {d.command && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                    <div className="text-sm text-gray-600 font-mono">{d.command}</div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

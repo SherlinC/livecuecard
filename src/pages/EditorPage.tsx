@@ -220,17 +220,32 @@ export function EditorPage() {
                 ))}
               </div>
             )}
-            {cardData.activityTime && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
-                <div className="text-sm text-gray-600">{cardData.activityTime}</div>
+            {(cardData.activityTime && cardData.command) ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                  <div className="text-sm text-gray-600">{cardData.activityTime}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                  <div className="text-sm text-gray-600 font-mono">{cardData.command}</div>
+                </div>
               </div>
-            )}
-            {cardData.command && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
-                <div className="text-sm text-gray-600 font-mono">{cardData.command}</div>
-              </div>
+            ) : (
+              <>
+                {cardData.activityTime && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
+                    <div className="text-sm text-gray-600">{cardData.activityTime}</div>
+                  </div>
+                )}
+                {cardData.command && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">直播口令</h4>
+                    <div className="text-sm text-gray-600 font-mono">{cardData.command}</div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
