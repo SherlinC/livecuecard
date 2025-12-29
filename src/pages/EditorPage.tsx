@@ -197,8 +197,16 @@ export function EditorPage() {
           </div>
         )}
         
-        {(cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.command) && (
+        {(cardData.benefits.length > 0 || cardData.activityTime || cardData.shippingInfo.shippingTime || cardData.command) && (
           <div className="space-y-3 mt-2">
+            {cardData.benefits.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-1">直播间福利</h4>
+                {cardData.benefits.map((benefit: string, index: number) => (
+                  <div key={index} className="text-sm text-gray-600">{benefit}</div>
+                ))}
+              </div>
+            )}
             {cardData.activityTime && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <h4 className="text-sm font-medium text-gray-700 mb-1">活动时间</h4>
