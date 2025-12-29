@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useCardStore } from '../store/cardStore';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Trash } from 'lucide-react';
 
 export function BasicInfoForm() {
   const { cardData, updateBasicInfo, updateMaterials, updateDesigns } = useCardStore();
@@ -8,6 +8,7 @@ export function BasicInfoForm() {
   const [newDesign, setNewDesign] = useState('');
   const [newColor, setNewColor] = useState('');
   const [newSize, setNewSize] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const platforms = ['小红书', '淘宝', '抖音', '快手', '微博'];
 
@@ -16,6 +17,27 @@ export function BasicInfoForm() {
       ? cardData.platforms.filter(p => p !== platform)
       : [...cardData.platforms, platform];
     updateBasicInfo(newPlatforms, cardData.productTitle);
+  };
+
+  const handleLogoFile = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        useCardStore.getState().updateCardData({ brandLogo: result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogoInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleLogoFile(e.target.files[0]);
+    }
+  };
+
+  const triggerLogoInput = () => {
+    logoInputRef.current?.click();
   };
 
   const addMaterial = () => {
@@ -60,6 +82,47 @@ export function BasicInfoForm() {
               {platform}
             </button>
           ))}
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">品牌名称</label>
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleLogoInput}
+            className="hidden"
+          />
+          <div className="flex items-center gap-3">
+            <div
+              className="group relative w-12 h-12 rounded-full overflow-hidden bg-black cursor-pointer"
+              onClick={triggerLogoInput}
+            >
+              {cardData.brandLogo ? (
+                <img src={cardData.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-white">+logo</div>
+              )}
+              {cardData.brandLogo && (
+                <button
+                  type="button"
+                  className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/50 text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useCardStore.getState().updateCardData({ brandLogo: '' });
+                  }}
+                >
+                  <Trash className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              value={cardData.brandName || ''}
+              onChange={(e) => useCardStore.getState().updateCardData({ brandName: e.target.value })}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 focus:border-pink-600 text-sm"
+              placeholder="品牌名称"
+            />
+          </div>
         </div>
       </div>
 

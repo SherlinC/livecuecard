@@ -2,6 +2,8 @@ export interface CardData {
   // 基础信息
   platforms: string[];
   productTitle: string;
+  brandName?: string;
+  brandLogo?: string;
   materials: MaterialItem[];
   designs: DesignItem[];
   

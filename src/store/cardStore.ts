@@ -49,6 +49,8 @@ interface CardState {
 const defaultCardData: CardData = {
   platforms: ['小红书'],
   productTitle: '',
+  brandName: '',
+  brandLogo: '',
   materials: [],
   designs: [],
   marketPrice: 0,

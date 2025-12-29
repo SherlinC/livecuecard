@@ -7,13 +7,24 @@ export function CardPreview({ data }: { data?: CardData }) {
   return (
     <div className="card-font bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto border border-gray-200">
       {/* 平台标签 */}
-      <div className="flex justify-center space-x-2 mb-4">
+      <div className="flex justify-center space-x-2 mb-2">
         {d.platforms.map((platform, index) => (
           <div key={index} className="platform-badge">
             {platform}
           </div>
         ))}
       </div>
+
+      {(d.brandName || d.brandLogo) && (
+        <div className="flex justify-center items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+            {d.brandLogo && (
+              <img src={d.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+            )}
+          </div>
+          <div className="text-sm text-gray-900">{d.brandName || '品牌'}</div>
+        </div>
+      )}
 
       {/* 主要内容区域 */}
       <div className="space-y-4">
