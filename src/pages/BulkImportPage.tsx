@@ -66,6 +66,7 @@ export function BulkImportPage() {
       await new Promise(r => setTimeout(r, 120));
 
       const target = (previewRef.current.querySelector(`[data-template="${templateType}"]`) as HTMLElement)
+        || (previewRef.current.querySelector(`[data-template="${templateType}"] .card-font`) as HTMLElement)
         || (previewRef.current.firstElementChild as HTMLElement)
         || previewRef.current;
       const result = await generateCardImage(target);
@@ -612,7 +613,7 @@ export function BulkImportPage() {
         <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
           <div ref={previewRef}>
             {templateType === 'portrait' ? (
-              <div data-template="portrait">
+              <div data-template="portrait" style={{ padding: '2px', background: 'transparent', boxSizing: 'border-box' }}>
                 {editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />}
               </div>
             ) : (
