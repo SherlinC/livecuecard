@@ -28,8 +28,8 @@ export async function generateCardImage(element: HTMLElement, options: Partial<a
   const rect = element.getBoundingClientRect();
   const width = Math.ceil(rect.width || element.offsetWidth || element.scrollWidth || 400);
   const height = Math.ceil(rect.height || element.offsetHeight || element.scrollHeight || 600);
-  const renderWidth = width + 2; // 额外预留边框像素，避免裁剪
-  const renderHeight = height + 20;
+  const renderWidth = width;
+  const renderHeight = height;
   const scale = Math.min(3, window.devicePixelRatio || 1);
 
   const defaultOptions: any = {

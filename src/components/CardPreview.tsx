@@ -1,11 +1,11 @@
 import { useCardStore } from '../store/cardStore';
 import type { CardData } from '../types/card';
 
-export function CardPreview({ data }: { data?: CardData }) {
+export function CardPreview({ data, fill, frameless }: { data?: CardData, fill?: boolean, frameless?: boolean }) {
   const { cardData } = useCardStore();
   const d = data ?? cardData;
   return (
-    <div className="card-font bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto border border-gray-200">
+    <div className={`card-font ${frameless ? 'bg-transparent p-0 shadow-none border-none' : 'bg-white rounded-2xl shadow-lg p-6 border border-gray-200'} ${fill ? 'w-full max-w-full box-border' : 'max-w-md mx-auto'}`}>
       {/* 品牌与平台同一行：左品牌，右平台 */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-[6px]">

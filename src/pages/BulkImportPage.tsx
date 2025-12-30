@@ -62,7 +62,6 @@ export function BulkImportPage() {
         ensureImageLoaded(row.mainImage),
         ensureImageLoaded(row.backImage)
       ]);
-      // 更新隐藏预览的渲染数据以匹配当前行
       setEditing(row);
       await new Promise(r => setTimeout(r, 120));
 
@@ -81,7 +80,10 @@ export function BulkImportPage() {
     }
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
-    saveAs(zipBlob, '手卡批量.zip');
+    const brand = (items.find(it => (it.brandName && it.brandName.trim()))?.brandName?.trim() || '手卡');
+    const suffix = templateType === 'landscape' ? '横版' : '竖版';
+    const safe = brand.replace(/[^\u4e00-\u9fa5\w\-]+/g, '_');
+    saveAs(zipBlob, `${safe}_${suffix}.zip`);
     setIsGenerating(false);
   };
 
@@ -90,18 +92,7 @@ export function BulkImportPage() {
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-gray-900">批量导入</h1>
-          <button
-            onClick={() => {
-              try { localStorage.clear(); } catch {}
-              setItems([]);
-              setRowsCount(0);
-              setErrors([]);
-              setFileName('');
-              try { (useCardStore.getState() as any).resetCardData(); } catch {}
-              window.location.reload();
-            }}
-            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-          >清缓存</button>
+
         </div>
         <p className="text-gray-600 mb-6">上传符合模板的Excel文件，系统将批量生成手卡图片并打包下载。</p>
 
@@ -204,10 +195,12 @@ export function BulkImportPage() {
                 <div key={idx} className="bg-white rounded-xl shadow-sm p-3">
                   <div className={`inline-block ${templateType==='landscape' ? 'w-full' : 'w-fit'}`}> 
                     {templateType === 'portrait' ? (
-                      <CardPreview data={it} />
+                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 box-border block w-full max-w-[400px] h-[300px] overflow-hidden">
+                        <CardPreview data={it} fill frameless />
+                      </div>
                     ) : (
                       // 横版预览
-                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 block w-full h-[300px] overflow-hidden">
+                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 box-border block w-full h-[300px] overflow-hidden">
                         <div className="flex items-center justify-between text-gray-900">
                           <div className="flex items-center gap-[6px]">
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
@@ -224,9 +217,9 @@ export function BulkImportPage() {
                           </div>
                         </div>
                         <div className="text-center mt-2">
-                          <h3 className="text-lg font-bold text-gray-900 py-3">{it.productTitle || '产品标题'}</h3>
+                          <h3 className="text-lg font-bold text-gray-900 py-3 truncate break-words">{it.productTitle || '产品标题'}</h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 mt-2 items-stretch">
+                        <div className="grid grid-cols-2 gap-2 mt-2 items-stretch min-h-0 overflow-hidden">
                           <div className="flex flex-col h-full gap-4">
                             <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-gray-500 text-sm">
                               {it.mainImage ? (
@@ -353,8 +346,8 @@ export function BulkImportPage() {
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-sm text-gray-700 truncate max-w-[65%]">{it.productTitle || `手卡 ${idx+1}`}</div>
-                    <div className="flex items-center gap-2">
-                      <label className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 cursor-pointer">
+                    <div className="flex items-center gap-2 flex-nowrap">
+                      <label className="inline-flex items-center px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 cursor-pointer h-8 whitespace-nowrap">
                         商品图
                         <input
                           type="file"
@@ -384,7 +377,7 @@ export function BulkImportPage() {
                             setEditing(JSON.parse(JSON.stringify(it)));
                           } catch {}
                         }}
-                        className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                        className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 h-8 whitespace-nowrap"
                       >编辑</button>
                       <button
                         onClick={() => {
@@ -392,7 +385,7 @@ export function BulkImportPage() {
                           setItems(arr);
                           setRowsCount(arr.length);
                         }}
-                        className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                        className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 h-8 whitespace-nowrap"
                       >删除</button>
                     </div>
                   </div>
@@ -619,13 +612,15 @@ export function BulkImportPage() {
         <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
           <div ref={previewRef}>
             {templateType === 'portrait' ? (
-              editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />
+              <div data-template="portrait">
+                {editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />}
+              </div>
             ) : (
               (() => {
                 const d = editing ?? (items[0] || null);
-                if (!d) return <CardPreview />;
+                if (!d) return <div data-template="landscape"><CardPreview /></div>;
                 return (
-                  <div className="card-font bg-white rounded-2xl shadow-lg p-6 border border-gray-200 inline-block flex flex-col">
+                  <div data-template="landscape" className="card-font bg-white rounded-2xl shadow-lg p-6 border border-gray-200 inline-block w-[600px] flex flex-col">
                     <div className="flex items-center justify-between text-gray-900">
                       <div className="flex items-center gap-[6px]">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
@@ -773,13 +768,6 @@ export function BulkImportPage() {
           </div>
         </div>
       </div>
-      {items.length > 0 && (
-        <button
-          onClick={batchGenerate}
-          disabled={isGenerating}
-          className="fixed bottom-6 right-6 px-5 py-3 rounded-xl bg-pink-600 text-white shadow-lg hover:bg-pink-700 disabled:opacity-50"
-        >{isGenerating ? `正在批量生成 (${progress}%)` : '批量生成'}</button>
-      )}
     </div>
   );
 }
