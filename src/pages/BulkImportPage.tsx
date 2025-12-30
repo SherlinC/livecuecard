@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Upload, FileSpreadsheet, Download, Package2 } from 'lucide-react';
 import { parseExcel, downloadTemplate } from '../utils/excel';
 import { useCardStore } from '../store/cardStore';
@@ -25,6 +25,8 @@ export function BulkImportPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editing, setEditing] = useState<CardData | null>(null);
   const bulkLogoInputRef = useRef<HTMLInputElement>(null);
+  const [duplicateFlags, setDuplicateFlags] = useState<boolean[]>([]);
+  const hasDuplicates = duplicateFlags.some(Boolean);
 
   const parsedRowsRef = useRef<any[]>([]);
 
@@ -38,6 +40,7 @@ export function BulkImportPage() {
     setErrors(errors);
     const withLogo = bulkBrandLogo ? (rows as CardData[]).map(r => ({ ...r, brandLogo: bulkBrandLogo })) : (rows as CardData[]);
     setItems(withLogo);
+    setDuplicateFlags(computeDuplicateFlags(withLogo));
   };
 
   const ensureImageLoaded = (url?: string) => new Promise<void>((resolve) => {
@@ -50,7 +53,7 @@ export function BulkImportPage() {
   });
 
   const batchGenerate = async () => {
-    if (!previewRef.current || items.length === 0) return;
+    if (!previewRef.current || items.length === 0 || hasDuplicates) return;
     setIsGenerating(true);
     setProgress(0);
     const zip = new JSZip();
@@ -65,8 +68,8 @@ export function BulkImportPage() {
       setEditing(row);
       await new Promise(r => setTimeout(r, 120));
 
-      const target = (previewRef.current.querySelector(`[data-template="${templateType}"]`) as HTMLElement)
-        || (previewRef.current.querySelector(`[data-template="${templateType}"] .card-font`) as HTMLElement)
+      const target = (previewRef.current.querySelector(`[data-template="${templateType}"] .card-font`) as HTMLElement)
+        || (previewRef.current.querySelector(`[data-template="${templateType}"]`) as HTMLElement)
         || (previewRef.current.firstElementChild as HTMLElement)
         || previewRef.current;
       const result = await generateCardImage(target);
@@ -87,6 +90,26 @@ export function BulkImportPage() {
     saveAs(zipBlob, `${safe}_${suffix}.zip`);
     setIsGenerating(false);
   };
+
+  function computeDuplicateFlags(list: CardData[]): boolean[] {
+    try {
+      const counts = new Map<string, number>();
+      list.forEach((it) => {
+        const key = ((it.productTitle || '').trim()) || '(empty)';
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      return list.map((it) => {
+        const key = ((it.productTitle || '').trim()) || '(empty)';
+        return (counts.get(key) || 0) > 1;
+      });
+    } catch {
+      return list.map(() => false);
+    }
+  }
+
+  useEffect(() => {
+    setDuplicateFlags(computeDuplicateFlags(items));
+  }, [items]);
 
   return (
     <div className="p-6">
@@ -170,9 +193,9 @@ export function BulkImportPage() {
 
         {items.length > 0 && (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-md font-semibold text-gray-900">预览与编辑</h3>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-md font-semibold text-gray-900">预览与编辑</h3>
                 <button
                   className={`px-3 py-1 text-sm rounded-md ${templateType==='landscape' ? 'bg-white border border-gray-300 text-pink-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => setTemplateType('landscape')}
@@ -181,32 +204,37 @@ export function BulkImportPage() {
                   className={`px-3 py-1 text-sm rounded-md ${templateType==='portrait' ? 'bg-white border border-gray-300 text-pink-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => setTemplateType('portrait')}
                 >竖版</button>
-              </div>
-              <button
-                disabled={isGenerating || rowsCount===0}
-                onClick={batchGenerate}
-                className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50"
-              >
-                <Package2 className="w-4 h-4 mr-2" />
-                {isGenerating ? `正在生成 (${progress}%)` : '开始批量生成并打包下载'}
-              </button>
-            </div>
-            <div className={`grid ${templateType==='portrait' ? 'md:grid-cols-3 gap-4' : 'grid-cols-2 gap-[30px]'}`}>
-              {items.map((it, idx) => (
-                <div key={idx} className="bg-white rounded-xl shadow-sm p-3">
-                  <div className={`inline-block ${templateType==='landscape' ? 'w-full' : 'w-fit'}`}> 
-                    {templateType === 'portrait' ? (
-                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 box-border block w-full max-w-[400px] h-[300px] overflow-hidden">
-                        <CardPreview data={it} fill frameless />
-                      </div>
-                    ) : (
-                      // 横版预览
-                      <div className="card-font bg-white rounded-2xl shadow p-4 border border-gray-200 box-border block w-full h-[300px] overflow-hidden">
-                        <div className="flex items-center justify-between text-gray-900">
-                          <div className="flex items-center gap-[6px]">
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
-                              {it.brandLogo && (
-                                <img src={it.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
+          </div>
+          <button
+            disabled={isGenerating || rowsCount===0 || hasDuplicates}
+            onClick={batchGenerate}
+            className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50"
+          >
+            <Package2 className="w-4 h-4 mr-2" />
+            {isGenerating ? `正在生成 (${progress}%)` : '开始批量生成并打包下载'}
+          </button>
+        </div>
+        {hasDuplicates && (
+          <div className="mb-3 px-3 py-2 bg-red-50 text-red-600 text-sm rounded border border-red-200">
+            检测到重名标题，请修改后再批量下载。
+          </div>
+        )}
+        <div className={`grid ${templateType==='portrait' ? 'md:grid-cols-3 gap-4' : 'grid-cols-2 gap-[30px]'}`}>
+          {items.map((it, idx) => (
+            <div key={idx} className="bg-white rounded-xl shadow-sm p-3">
+              <div className={`inline-block ${templateType==='landscape' ? 'w-full' : 'w-fit'}`}> 
+                {templateType === 'portrait' ? (
+                  <div className={`card-font bg-white rounded-2xl shadow p-4 box-border block w-full max-w-[400px] h-[300px] overflow-hidden border ${duplicateFlags[idx] ? 'border-red-500 ring-1 ring-red-300' : 'border-gray-200'}`}>
+                    <CardPreview data={it} fill frameless />
+                  </div>
+                ) : (
+                  // 横版预览
+                  <div className={`card-font bg-white rounded-2xl shadow p-4 box-border block w-full h-[300px] overflow-hidden border ${duplicateFlags[idx] ? 'border-red-500 ring-1 ring-red-300' : 'border-gray-200'}`}>
+                    <div className="flex items-center justify-between text-gray-900">
+                      <div className="flex items-center gap-[6px]">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-black">
+                          {it.brandLogo && (
+                            <img src={it.brandLogo} alt="品牌Logo" className="w-full h-full object-cover" />
                               )}
                             </div>
                             <div className="text-sm font-medium text-gray-900 uppercase">{it.brandName || '品牌'}</div>
@@ -613,7 +641,7 @@ export function BulkImportPage() {
         <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
           <div ref={previewRef}>
             {templateType === 'portrait' ? (
-              <div data-template="portrait" style={{ padding: '2px', background: 'transparent', boxSizing: 'border-box' }}>
+              <div data-template="portrait" style={{ padding: '4px', border: '4px solid transparent', background: 'transparent', boxSizing: 'border-box', display: 'inline-block', overflow: 'visible' }}>
                 {editing ? <CardPreview data={editing} /> : items[0] ? <CardPreview data={items[0]} /> : <CardPreview />}
               </div>
             ) : (

@@ -15,7 +15,7 @@ export function EditorPage() {
   const [saveTip, setSaveTip] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<'png' | 'pdf'>('png');
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
-  const [templateType, setTemplateType] = useState<'portrait' | 'landscape'>('portrait');
+  const [templateType, setTemplateType] = useState<'portrait' | 'landscape'>('landscape');
   const { cardData, isGenerating, setGenerating, setPreviewUrl, previewUrl, upsertHistoryByName, resetCardData } = useCardStore() as any;
   const previewRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -327,20 +327,20 @@ export function EditorPage() {
           </div>
           {/* 模板选择 */}
           <div className="mb-4">
-            <div className="inline-flex bg-gray-100 p-1 rounded-lg">
-              <button
-                className={`px-3 py-1 text-sm rounded-md ${templateType==='portrait' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'}`}
-                onClick={() => setTemplateType('portrait')}
-              >
-                竖版
-              </button>
-              <button
-                className={`px-3 py-1 text-sm rounded-md ${templateType==='landscape' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'}`}
-                onClick={() => setTemplateType('landscape')}
-              >
-                横版
-              </button>
-            </div>
+          <div className="inline-flex bg-gray-100 p-1 rounded-lg">
+            <button
+              className={`px-3 py-1 text-sm rounded-md ${templateType==='landscape' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'}`}
+              onClick={() => setTemplateType('landscape')}
+            >
+              横版
+            </button>
+            <button
+              className={`px-3 py-1 text-sm rounded-md ${templateType==='portrait' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'}`}
+              onClick={() => setTemplateType('portrait')}
+            >
+              竖版
+            </button>
+          </div>
           </div>
 
           {saveTip && (
