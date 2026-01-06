@@ -1,4 +1,40 @@
+import { useNavigate } from 'react-router-dom';
+import { useCardStore } from '../store/cardStore';
+
 export function TemplatesPage() {
+  const navigate = useNavigate();
+  const { resetCardData, updateCardData } = useCardStore() as any;
+
+  const startFromLandscape = () => {
+    resetCardData();
+    updateCardData({
+      brandName: '品牌',
+      productTitle: '名称 XXX',
+      marketPrice: 1000,
+      livePrice: 900,
+      discount: '8.3折',
+      commission: 10,
+      materials: [{ text: 'xxxx' }, { text: 'xxxxxxxx' }],
+      designs: [{ text: 'xxxxx' }, { text: 'xxxxxxxx' }],
+    });
+    navigate('/editor?t=landscape');
+  };
+
+  const startFromPortrait = () => {
+    resetCardData();
+    updateCardData({
+      brandName: '品牌',
+      productTitle: '名称 XXX',
+      marketPrice: 1000,
+      livePrice: 900,
+      discount: '8.3折',
+      commission: 10,
+      materials: [{ text: 'xxxx' }, { text: 'xxxxxxxx' }],
+      designs: [{ text: 'xxxxx' }, { text: 'xxxxxxxx' }],
+    });
+    navigate('/editor?t=portrait');
+  };
+
   return (
     <div className="py-12">
       <div className="text-center mb-12">
@@ -9,7 +45,7 @@ export function TemplatesPage() {
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <div className="text-gray-900 font-semibold mb-3">横版</div>
-          <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow bg-white p-4 h-[420px] flex flex-col">
+          <div onClick={startFromLandscape} className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow bg-white p-4 h-[420px] flex flex-col cursor-pointer">
             <div className="flex items-center gap-3 text-gray-900">
               <div className="w-8 h-8 rounded-full bg-black" />
               <div className="text-sm">品牌</div>
@@ -61,7 +97,7 @@ export function TemplatesPage() {
 
         <div>
           <div className="text-gray-900 font-semibold mb-3">竖版</div>
-          <div className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow bg-white p-4 h-[420px]">
+          <div onClick={startFromPortrait} className="relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-shadow bg-white p-4 h-[420px] cursor-pointer">
             <div className="flex items-center justify-center gap-3 text-gray-900">
               <div className="w-10 h-10 rounded-full bg-black" />
               <div className="text-sm">品牌</div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CardPreview } from '../components/CardPreview';
 import { BasicInfoForm } from '../components/BasicInfoForm';
 import { PriceForm } from '../components/PriceForm';
@@ -19,6 +20,7 @@ export function EditorPage() {
   const { cardData, isGenerating, setGenerating, setPreviewUrl, previewUrl, upsertHistoryByName, resetCardData } = useCardStore() as any;
   const previewRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   const tabs = [
     { id: 'basic', name: '基础信息', component: BasicInfoForm },
@@ -73,6 +75,16 @@ export function EditorPage() {
     document.addEventListener('mousedown', onDocMouseDown);
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [exportMenuOpen]);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const t = params.get('t');
+      if (t === 'portrait' || t === 'landscape') {
+        setTemplateType(t as any);
+      }
+    } catch {}
+  }, [location.search]);
 
   const handleSave = async () => {
     const name = (cardData.productTitle || '').trim() || '未命名手卡';
