@@ -12,8 +12,8 @@ export function Layout() {
     { name: '模板库', href: '/templates', icon: LayoutIcon },
     { name: '历史记录', href: '/history', icon: History },
     { name: '批量导入', href: '/bulk', icon: FileSpreadsheet },
-    { name: '个人中心', href: '/profile', icon: User },
   ];
+  const navVisible = navigation.filter(item => item.href !== '/' && item.href !== '/history');
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -35,7 +35,7 @@ export function Layout() {
             
             {/* 桌面端导航 */}
             <div className="hidden md:flex items-center space-x-8">
-              {navigation.map((item) => (
+              {navVisible.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
@@ -67,7 +67,7 @@ export function Layout() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-b">
-              {navigation.map((item) => (
+              {navVisible.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}

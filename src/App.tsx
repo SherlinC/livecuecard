@@ -5,7 +5,6 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { ProfilePage } from './pages/ProfilePage';
 import { BulkImportPage } from './pages/BulkImportPage.tsx';
 import { Layout } from './components/Layout';
 
@@ -18,7 +17,6 @@ function App() {
           <Route path="editor" element={<EditorPage />} />
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="history" element={<HistoryPage />} />
-          <Route path="profile" element={<ProfilePage />} />
           <Route path="bulk" element={<BulkImportPage />} />
         </Route>
         <Route path="/login" element={<LoginPage />} />
