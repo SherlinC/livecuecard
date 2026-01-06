@@ -267,12 +267,21 @@ export function BulkImportPage() {
                                 </div>
                               </div>
                               <div className="rounded-lg bg-pink-600 text-white h-16 flex items-center justify-center text-sm">
-                                <div>
+                                <div className="h-full flex flex-col items-center justify-end">
                                   <div className="text-xs text-pink-200">直播价</div>
                                   <div className="text-sm font-bold">¥{it.livePrice || 0}</div>
-                                  {it.discount && (
-                                    <div className="opacity-80 text-xs">{it.discount}</div>
-                                  )}
+                                  {(() => {
+                                    const t = String(it.discount || '').trim();
+                                    if (t) return <div className="opacity-80 text-xs">{t}</div>;
+                                    const mp = parseFloat(String(it.marketPrice || 0));
+                                    const lp = parseFloat(String(it.livePrice || 0));
+                                    if (mp > 0 && lp > 0 && lp < mp) {
+                                      const offPct = Math.max(0, Math.min(100, parseFloat(((1 - lp / mp) * 100).toFixed(1))));
+                                      const label = `${offPct}% OFF`;
+                                      return <div className="opacity-80 text-xs">{label}</div>;
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
                               <div className="rounded-lg bg-gray-600 text-white h-16 flex items-center justify-center text-sm">
@@ -687,12 +696,21 @@ export function BulkImportPage() {
                             </div>
                           </div>
                           <div className="rounded-lg bg-pink-600 text-white h-16 flex items-center justify-center text-sm">
-                            <div>
+                            <div className="h-full flex flex-col items-center justify-end">
                               <div className="text-xs text-pink-200">直播价</div>
                               <div className="text-sm font-bold">¥{d.livePrice || 0}</div>
-                              {d.discount && (
-                                <div className="opacity-80 text-xs">{d.discount}</div>
-                              )}
+                              {(() => {
+                                const t = String(d.discount || '').trim();
+                                if (t) return <div className="opacity-80 text-xs">{t}</div>;
+                                const mp = parseFloat(String(d.marketPrice || 0));
+                                const lp = parseFloat(String(d.livePrice || 0));
+                                if (mp > 0 && lp > 0 && lp < mp) {
+                                  const offPct = Math.max(0, Math.min(100, parseFloat(((1 - lp / mp) * 100).toFixed(1))));
+                                  const label = `${offPct}% OFF`;
+                                  return <div className="opacity-80 text-xs">{label}</div>;
+                                }
+                                return null;
+                              })()}
                             </div>
                           </div>
                           <div className="rounded-lg bg-gray-600 text-white h-16 flex items-center justify-center text-sm">
