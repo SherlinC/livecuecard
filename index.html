@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23000000' stroke='%23db2777' stroke-width='12'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>直播手卡</title>
+    <style id="hide-trae-floating">
+      #trae-floating-widget,
+      #trae-solo,
+      .trae-floating-widget,
+      .trae-solo-widget,
+      body > *[style*="position: fixed"][style*="bottom"][style*="right"] {
+        display: none !important;
+      }
+    </style>
     <script type="module">
       if (import.meta.hot?.on) {
         import.meta.hot.on('vite:error', (error) => {
